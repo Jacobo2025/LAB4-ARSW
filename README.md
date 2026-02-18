@@ -124,11 +124,39 @@ src/main/java/edu/eci/arsw/blueprints
 - Métricas con Actuator.
 
 ---
-# INFORME DE LABORATORIO
-#### AUTORES
-- Jacobo Diaz Alvarado
+# **INFORME DE LABORATORIO**
+#### **AUTORES**
+- *Jacobo Diaz Alvarado*
 
-- Santiago Carmona Pineda
+- *Santiago Carmona Pineda*
 
 ### 1. Familiarización con el código base
+
+1.1 Entendiendo `model`:
+
+En la carpeta *model* se encuntran las siguientes clase:
+
+**Point**: es un record con dos campos *x* y *y*. Al ser un record hay métodos que se generan automáticamente. 
+
+**Blueprint**: 
+- Esta clase tiene tres atributos (author, name, una lista de Point inicializada).
+- Tiene sus respectivos `getters`.
+- Tiene un método añadir punto.
+- Realiza una sobreescritura al método `equals()` que tiene como objetivo decir que dos `Objetos`son iguales si tienen el mismo nombre y el mismo autor, sin importar el espacio de memorio.
+- Realiza una sobreescritura al método `hashCode()` ya que *hashCode()* y *equals()* van de la mano. Su funcion garantizar que esa igualdad funcione bien en colecciones.
+
+1.2 Entnediendo `persistence`:
+
+En la carpeta *persistence* se encuentrar las siguientes clases:
+
+**BlueprintNotFoundException**: es una extensión de Exception. Es una excepción personalizada para el caso en el que no se encuentre un *Blueprint*.
+
+**BlueprintPersistenceException**: Es una excepción personalizada para el caso en el que ya hay un *Blueprint* en una colección.
+
+**BlueprintPersistence**: Es una interfaz que contiene los métodos posibles para manejar el almacenamiento.
+
+**InMemoryBlueprintPersistence**: Es una clase que implementa a *BlueprintPersistence*. 
+
+
+
 
