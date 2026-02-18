@@ -132,7 +132,7 @@ src/main/java/edu/eci/arsw/blueprints
 
 ### 1. Familiarización con el código base
 
-1.1 Entendiendo `model`:
+#### 1.1 Entendiendo `model`:
 
 En la carpeta *model* se encuntran las siguientes clase:
 
@@ -145,7 +145,7 @@ En la carpeta *model* se encuntran las siguientes clase:
 - Realiza una sobreescritura al método `equals()` que tiene como objetivo decir que dos `Objetos`son iguales si tienen el mismo nombre y el mismo autor, sin importar el espacio de memorio.
 - Realiza una sobreescritura al método `hashCode()` ya que *hashCode()* y *equals()* van de la mano. Su funcion garantizar que esa igualdad funcione bien en colecciones.
 
-1.2 Entnediendo `persistence`:
+#### 1.2 Entnediendo `persistence`:
 
 En la carpeta *persistence* se encuentrar las siguientes clases:
 
