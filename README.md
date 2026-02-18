@@ -121,4 +121,14 @@ src/main/java/edu/eci/arsw/blueprints
 **Bonus**:  
 
 - Imagen de contenedor (`spring-boot:build-image`).  
-- Métricas con Actuator.  
+- Métricas con Actuator.
+
+---
+# INFORME DE LABORATORIO
+#### AUTORES
+- Jacobo Diaz Alvarado
+
+- Santiago Carmona Pineda
+
+### 1. Familiarización con el código base
+
