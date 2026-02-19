@@ -121,7 +121,7 @@ src/main/java/edu/eci/arsw/blueprints
 **Bonus**:  
 
 - Imagen de contenedor (`spring-boot:build-image`).  
-- Métricas con Actuator.
+- Métricas con Actuator.  
 
 ---
 # **INFORME DE LABORATORIO**
@@ -129,16 +129,16 @@ src/main/java/edu/eci/arsw/blueprints
 - *Jacobo Diaz Alvarado*
 
 - *Santiago Carmona Pineda*
-
+---
 ## 1. Familiarización con el código base
 
 ### 1.1 Entendiendo `model`:
 
 En la carpeta *model* se encuntran las siguientes clase:
 
-**Point**: es un record con dos campos *x* y *y*. Al ser un record hay métodos que se generan automáticamente. 
+**Point**: es un record con dos campos *x* y *y*. Al ser un record hay métodos que se generan automáticamente.
 
-**Blueprint**: 
+**Blueprint**:
 - Esta clase tiene tres atributos (author, name, una lista de Point inicializada).
 - Tiene sus respectivos `getters`.
 - Tiene un método añadir punto.
@@ -155,7 +155,7 @@ En la carpeta *persistence* se encuentrar las siguientes clases:
 
 **BlueprintPersistence**: Es una interfaz que contiene los métodos posibles para manejar el almacenamiento.
 
-**InMemoryBlueprintPersistence**: Es una clase que implementa a *BlueprintPersistence*. 
+**InMemoryBlueprintPersistence**: Es una clase que implementa a *BlueprintPersistence*.
 
 - Posee un `Map` que  guarda por nombre y objeto.
 - **InMemoryBlueprintPersistence()**: Constructor que inicializa tres *Blueprint* los cuales los guarda en el `Map`.
@@ -190,7 +190,7 @@ En la carpeta *persistence* se encuentrar las siguientes clases:
 
 ### 1.5 Entendiendo `controllers`:
 
-**BlueprintsAPIController**: recibe peticiones HTTP 
+**BlueprintsAPIController**: recibe peticiones HTTP
 
 - Tiene un atributo (service).
 - **getAll()**: tiene el  endpoint `@GetMapping` y le pide al servicio todos los `Blueprint`.
@@ -200,5 +200,154 @@ En la carpeta *persistence* se encuentrar las siguientes clases:
 - **add(@Valid @RequestBody NewBlueprintRequest req)**: tiene el endpoint `@PostMapping` y añade un nuevo `Blueprint` con ayuda del servicio.
 - **addPoint(@PathVariable String author, @PathVariable String bpname, @RequestBody Point p)**: tiene el endpoint `@PutMapping("/{author}/{bpname}/points")` y le pide al servicio añadir un punto a un `Blueprint`.
 
+---
+## 2. Migración a persistencia en PostgreSQL.
+
+### 2.1 Configuración de PostgreSQL:
+
+Lo primero que se hizo fue instalar PostgreSQL en nuestro equipo y allí crear la base
+de datos para la API. Una vez creada fue asignada a un usuario de la base de datos.
+
+### 2.2 Configuración del `pom.xml`
+
+Se agregaron estas dos dependencias nuevas:
+
+```
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    
+```
+
+La primera dependencia incluye Spring Data JPA junto con Hibernate como proveedor JPA por defecto.
+La segunda proporciona el driver JDBC específico para PostgreSQL, marcado como runtime porque solo se necesita durante la ejecución.
+
+### 2.3 Configuración de `application.properties`
+
+Aquí se agregaron los parámetros de conexión con nuestra base de datos PostgreSQL.
+
+```
+    # Configuración de la base de datos
+    spring.datasource.url=jdbc:postgresql://localhost:5432/BlueprintDB
+    spring.datasource.username=jacobo
+    spring.datasource.password=jacobo123
+    spring.datasource.driver-class-name=org.postgresql.Driver
+    
+    # Configuración de JPA/Hibernate
+    spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+    spring.jpa.hibernate.ddl-auto=update
+    spring.jpa.show-sql=true
+    spring.jpa.properties.hibernate.format_sql=true
+    
+```
+**Configuración de la base de datos**
+
+- **URL de conexión**: Aquí se coloca el puerto donde trabaja nuestra base de datos *5432* y el nombre de nuestra base *BlueprinDB*.
+
+- **USERNAME**: aquí se coloca el nombre del propietario de la base de datos, este caso *jacobo*.
+
+- **PASSWORD**: aquí se coloca la contraseña del propietario de la base de datos, en este caso, *jacobo123*.
+
+**Configuración de JPA/Hibernate**
+
+- **spring.jpa.hibernate.ddl-auto**: controla cómo Hibernate gestiona el esquema de la base de datos.
+
+**Configuración de logging SQL**
+
+- Estas configuraciones permiten visualizar las consultas SQL generadas por Hibernate en la consola, facilitando la comprensión y optimización de las operaciones de base de datos.
+
+### 2.4 Migración a la base de datos PostgreSQL
+
+**2.4.1 tranformación de `model`**
+
+La implementación de `JPA` permite poner anotaciones para hacer referencia a tablas en nuestra base de datos.
+
+- **@Entity**: esta anotación le dice al programa *"esta clase representa una tabla en la base de datos"*.
+- **@Table**: permite decirle al programa con qué tabla exacta de la base de datos se quiere conectar tu clase.
+- **@Id**: Se utiliza para marcar un campo como clave primaria de una entidad JPA.
+- **@GeneratedValue**: genera valores únicos para el Id de la tabla.
+- **@ElementCollection**: le dice al programa qué tipo de datos va a contener una lista o colección.
+- **@Embeddable**:anotación para declarar que una clase será incrustada por otras entidades.
+
+Estas anotaciones se utlizadorn en la clase *Blueprint* generando los siguientes cambios:
+
+- **Nuevo atributo**: *Blueprint* tiene un nuevo atributo llamado *id*.
+- **Modificación de atributo**: la *points* dejó de ser un atributo *final*.
+- **Constructor sin argumentos**: *JPA* necesita el constructor vacío porque cuando recupera datos de la base de datos, necesita crear el objeto primero vacío y luego ir rellenando sus campos uno por uno.
+- **Nuevo getter**: se generó el *getter* del atributo *id*.
+
+Cambios en la clase *Point*:
+
+- Point dejó de ser un *Record* y se convirtió en una clase normal porque *JPA* necestia un **constructor sin argumentos**.
+
+**2.4.2 Creación de `BlueprintRepository`**
+
+```java
+public interface BlueprintRepository extends JpaRepository<Blueprint,Long> {
+    Optional<Blueprint> findByAuthorAndName(String author, String name);
+    Set<Blueprint> findByAuthor(String author);
+}
+```
+
+Esta es una interface que exiende a *JpaRepository*. Esta permite comunicarse con la base de datos sin tener que escribir las consultas SQL.
+
+
+**2.4.3 Creación de `PostgresBlueprintPersistence`**
+
+```java
+@Repository
+@Primary
+public class PostgresBlueprintPersistence implements BlueprintPersistence{
+    private BlueprintRepository blueprintRepository;
+
+    public PostgresBlueprintPersistence(BlueprintRepository blueprintRepository) {
+        this.blueprintRepository = blueprintRepository;
+    }
+
+    @Override
+    public void saveBlueprint(Blueprint bp) throws BlueprintPersistenceException {
+        Optional<Blueprint> existing = blueprintRepository.findByAuthorAndName(bp.getAuthor(), bp.getName());
+        if (existing.isPresent()) throw new BlueprintPersistenceException("Blueprint ya exíste");
+        blueprintRepository.save(bp);
+    }
+
+    @Override
+    public Blueprint getBlueprint(String author, String name) throws BlueprintNotFoundException {
+        Optional<Blueprint> existing = blueprintRepository.findByAuthorAndName(author,name);
+        if(existing.isEmpty()) throw new BlueprintNotFoundException("Blueprint no encontrado");
+        return existing.get();
+    }
+
+    @Override
+    public Set<Blueprint> getBlueprintsByAuthor(String author) throws BlueprintNotFoundException {
+        Set<Blueprint> existing = blueprintRepository.findByAuthor(author);
+        if (existing.isEmpty()) throw new BlueprintNotFoundException("Blueprint no encontrado");
+        return existing;
+    }
+
+    @Override
+    public Set<Blueprint> getAllBlueprints() {
+        return new HashSet<>(blueprintRepository.findAll());
+    }
+
+    @Override
+    public void addPoint(String author, String name, int x, int y) throws BlueprintNotFoundException {
+        Optional<Blueprint> existing = blueprintRepository.findByAuthorAndName(author,name);
+        if (existing.isEmpty()) throw new BlueprintNotFoundException("Blueprint no encontrado");
+        Blueprint bd = existing.get();
+        bd.addPoint(new Point(x,y));
+        blueprintRepository.save(bd);
+
+    }
+}
+```
+Esta clase funciona igual que *InMemoryBlueprintPersistence*, con la diferencia de que en vez de guardar los datos en un *Map* (que se borra al apagar la aplicación), los guarda en una base de datos PostgreSQL de forma permanente usando un *BlueprintRepository*.
 
 

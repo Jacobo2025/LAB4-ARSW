@@ -65,7 +65,7 @@ public class BlueprintsAPIController {
     public ResponseEntity<?> addPoint(@PathVariable String author, @PathVariable String bpname,
                                       @RequestBody Point p) {
         try {
-            services.addPoint(author, bpname, p.x(), p.y());
+            services.addPoint(author, bpname, p.getX(), p.getY());
             return ResponseEntity.status(HttpStatus.ACCEPTED).build();
         } catch (BlueprintNotFoundException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", e.getMessage()));
