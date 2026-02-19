@@ -158,14 +158,14 @@ En la carpeta *persistence* se encuentrar las siguientes clases:
 **InMemoryBlueprintPersistence**: Es una clase que implementa a *BlueprintPersistence*. 
 
 - Posee un `Map` que  guarda por nombre y objeto.
-- InMemoryBlueprintPersistence(): Constructor que inicializa tres *Blueprint* los cuales los guarda en el `Map`.
-- keyOf(Blueprint bp): método para juntar en un solo *String* el autor y el nombre de *Blueprint* a partir de un *Blueprint*.
-- keyOf(String author, String name): método para juntar en un solo *String* el autor y el nombre a partir de un *author* y *name*.
-- saveBlueprint(Blueprint bp): método para guarda un *Blueprint* en el *Map* siempre y cuando este no haya estado antes.
-- getBlueprint(String author, String name): método que busca dentro de *Map* un *Blueprint* a partir de *author* y *name*.
-- getBlueprintsByAuthor(String author): es un método que "agarra" todo los *Blueprint* que tienen el mismo *Author* y los devuelve en un conjunto.
-- getAllBlueprints(): devuelve todos los *Blueprints* que están dentro del *Map*.
-- addPoint(String author, String name, int x, int y): método para añadirle a un *Blueprint* un punto.
+- **InMemoryBlueprintPersistence()**: Constructor que inicializa tres *Blueprint* los cuales los guarda en el `Map`.
+- **keyOf(Blueprint bp)**: método para juntar en un solo *String* el autor y el nombre de *Blueprint* a partir de un *Blueprint*.
+- **keyOf(String author, String name)**: método para juntar en un solo *String* el autor y el nombre a partir de un *author* y *name*.
+- **saveBlueprint(Blueprint bp)**: método para guarda un *Blueprint* en el *Map* siempre y cuando este no haya estado antes.
+- **getBlueprint(String author, String name)**: método que busca dentro de *Map* un *Blueprint* a partir de *author* y *name*.
+- **getBlueprintsByAuthor(String author)**: es un método que "agarra" todo los *Blueprint* que tienen el mismo *Author* y los devuelve en un conjunto.
+- **getAllBlueprints()**: devuelve todos los *Blueprints* que están dentro del *Map*.
+- **addPoint(String author, String name, int x, int y)**: método para añadirle a un *Blueprint* un punto.
 
 ### 1.3 Entendiendo `filters`:
 
@@ -182,23 +182,23 @@ En la carpeta *persistence* se encuentrar las siguientes clases:
 **BlueprintsServices**: Es una clase de service encarda de llevar toda la lógica.
 
 - Tiene dos atributos (persistence y filter).
-- addNewBlueprint(Blueprint bp): guarda un *Blueprint* en la persistencia.
-- getAllBlueprints(): le pide a la persistencia todos los *Blueprint*.
-- getBlueprintsByAuthor(String author): le pide a la persistencia los *Blueprints* por *author*.
-- getBlueprint(String author, String name): le pide a la persistencia los *Blueprints* a través de un filtro.
-- addPoint(String author, String name, int x, int y): le pide a la persistencia darle un punto a un *Blueprint*.
+- **addNewBlueprint(Blueprint bp)**: guarda un *Blueprint* en la persistencia.
+- **getAllBlueprints()**: le pide a la persistencia todos los *Blueprint*.
+- **getBlueprintsByAuthor(String author)**: le pide a la persistencia los *Blueprints* por *author*.
+- **getBlueprint(String author, String name)**: le pide a la persistencia los *Blueprints* a través de un filtro.
+- **addPoint(String author, String name, int x, int y)**: le pide a la persistencia darle un punto a un *Blueprint*.
 
 ### 1.5 Entendiendo `controllers`:
 
 **BlueprintsAPIController**: recibe peticiones HTTP 
 
 - Tiene un atributo (service).
-- getAll(): tiene el  endpoint `@GetMapping` y le pide al servicio todos los `Blueprint`.
-- byAuthor(@PathVariable String author): tiene el endpoint `@GetMapping("/{author}")` y le pide buscar un `Blueprint`por `author`al servicio.
-- byAuthorAndName(@PathVariable String author, @PathVariable String bpname): tiene el endpoint `@GetMapping("/{author}/{bpname}")` y le pide buscar un `Blueprint`por `author` y `name`al servicio.
-- NewBlueprintRequest: Es un record que sirve para que definir cómo debe verse el JSON que llega cuando alguien quiere crear un Blueprint.
-- add(@Valid @RequestBody NewBlueprintRequest req): tiene el endpoint `@PostMapping` y añade un nuevo `Blueprint` con ayuda del servicio.
-- addPoint(@PathVariable String author, @PathVariable String bpname, @RequestBody Point p): tiene el endpoint `@PutMapping("/{author}/{bpname}/points")` y le pide al servicio añadir un punto a un `Blueprint`.
+- **getAll()**: tiene el  endpoint `@GetMapping` y le pide al servicio todos los `Blueprint`.
+- **byAuthor(@PathVariable String author)**: tiene el endpoint `@GetMapping("/{author}")` y le pide buscar un `Blueprint`por `author`al servicio.
+- **byAuthorAndName(@PathVariable String author, @PathVariable String bpname)**: tiene el endpoint `@GetMapping("/{author}/{bpname}")` y le pide buscar un `Blueprint`por `author` y `name`al servicio.
+- **NewBlueprintRequest**: Es un record que sirve para que definir cómo debe verse el JSON que llega cuando alguien quiere crear un Blueprint.
+- **add(@Valid @RequestBody NewBlueprintRequest req)**: tiene el endpoint `@PostMapping` y añade un nuevo `Blueprint` con ayuda del servicio.
+- **addPoint(@PathVariable String author, @PathVariable String bpname, @RequestBody Point p)**: tiene el endpoint `@PutMapping("/{author}/{bpname}/points")` y le pide al servicio añadir un punto a un `Blueprint`.
 
 
 
