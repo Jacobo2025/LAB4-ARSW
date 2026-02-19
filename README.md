@@ -351,3 +351,53 @@ public class PostgresBlueprintPersistence implements BlueprintPersistence{
 Esta clase funciona igual que *InMemoryBlueprintPersistence*, con la diferencia de que en vez de guardar los datos en un *Map* (que se borra al apagar la aplicación), los guarda en una base de datos PostgreSQL de forma permanente usando un *BlueprintRepository*.
 
 
+---
+## 3. Buenas prácticas de API REST
+
+### 3.1 Cambio de path:
+
+Lo que se hizo fue poner el path `/api/v1/blueprints` en el `@RequestMapping(...)` de nuestro *controller*.
+
+### 3.2 Códigos HTTP:
+
+Se usaron los siguientes métodos estáticos para controlar el código HTTP de la respuesta.
+
+- **.ok()**: Se usa para dar la respuesta `200 OK`. Fue implementado en los métodos con el endpont `GET`.
+- **.notFound()**: Se usa para dar la respuesta `404 Not Found`. Fue implementado en los métodos del *controller* donde se buscaba por un atributo particular.
+- **.status(HttpStatus.CREATED)**: Se usa para dar la respuestra `201 Created`. Fue implementado en el método del *controller* que tenia el verbo `POST`.
+- **.status(HttpStatus.ACCEPTED)**: Se usa para dar la respuesta `202 Accepted`. Fue implementado en el método **addPoint()** del *controller*.
+- **.status(HttpStatus.CONFLICT)**: Se usa para la respuesta `409 Conflict`. Fue implementado en **.add()** de *controller* que usa el verbo `POST`.
+
+### 3.3 Implementación de clase genérica para dar respuesta:
+
+**3.3.1 Creación de la clase genérica**:
+
+Se creó este *Record* para hacer manualmente nuestras respuestas a solicitudes.
+```java
+public record ApiResponse<T>(int code, String message, T data) { }
+```
+
+**3.3.2 Implementación en el *Controller***:
+
+Se modificó el tipo de retorno de todos los endpoints para que envuelvan la data en un `ApiResponse<T>`, estandarizando así todas las respuestas de la API con el mismo formato:
+```json
+{
+  "code": 200,
+  "message": "execute ok",
+  "data": {}
+}
+```
+
+Antes, los endpoints retornaban el objeto directamente:
+```java
+return ResponseEntity.ok(services.getAllBlueprints());
+```
+
+Después, toda respuesta pasa por `ApiResponse`:
+```java
+ApiResponse<Set<Blueprint>> apiResponse = new ApiResponse<>(200, "execute ok", services.getAllBlueprints());
+return ResponseEntity.ok(apiResponse);
+```
+
+Esto aplica tanto para respuestas exitosas como para errores, donde `data` es `null` y el `code` y `message` reflejan el error correspondiente.
+
