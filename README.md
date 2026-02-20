@@ -483,3 +483,131 @@ public ResponseEntity<ApiResponse<Set<Blueprint>>> byAuthor(
 
 Esta combinación permite que Swagger UI muestre, para cada operación, su descripción, los parámetros esperados y los posibles resultados, facilitando el consumo y la prueba de la API directamente desde el navegador.
 
+---
+## 5. Filtros de *Blueprints*
+
+### 5.1 Interfaz `BlueprintsFilter`
+
+Se definió la interfaz `BlueprintsFilter` en el paquete `filters`. Cualquier filtro que se quiera añadir en el futuro solo debe implementar este contrato:
+
+```java
+public interface BlueprintsFilter {
+    Blueprint apply(Blueprint bp);
+}
+```
+
+### 5.2 Mecanismo de activación por perfiles de Spring
+
+Cada filtro está anotado con `@Profile`, lo que le indica a Spring que solo registre ese bean cuando la aplicación se inicia con ese perfil activo. De este modo, únicamente **un** bean de tipo `BlueprintsFilter` existe en el contexto en cada ejecución, sin necesidad de cambiar código.
+
+| Perfil Spring | Filtro activo | Comportamiento |
+|---|---|---|
+| `default` (ninguno) | `IdentityFilter` | Devuelve el blueprint sin modificaciones |
+| `redundancy` | `RedundancyFilter` | Elimina puntos consecutivos duplicados |
+| `undersampling` | `UndersamplingFilter` | Conserva 1 de cada 2 puntos (índices pares) |
+
+Para activar un perfil al levantar la aplicación:
+
+```bash
+# Perfil redundancy
+mvn spring-boot:run -Dspring-boot.run.profiles=redundancy
+
+# Perfil undersampling
+mvn spring-boot:run -Dspring-boot.run.profiles=undersampling
+
+# Sin perfil → IdentityFilter (comportamiento por defecto)
+mvn spring-boot:run
+```
+
+### 5.3 `IdentityFilter` — filtro por defecto
+
+```java
+@Component
+@Profile("default")
+public class IdentityFilter implements BlueprintsFilter {
+    @Override
+    public Blueprint apply(Blueprint bp) { return bp; }
+}
+```
+
+Devuelve el `Blueprint` tal como está almacenado, sin ninguna transformación. Se activa cuando no se especifica ningún perfil (`default`).
+
+### 5.4 `RedundancyFilter` — eliminación de puntos consecutivos duplicados
+
+```java
+@Component
+@Profile("redundancy")
+public class RedundancyFilter implements BlueprintsFilter {
+    @Override
+    public Blueprint apply(Blueprint bp) {
+        List<Point> in = bp.getPoints();
+        if (in.isEmpty()) return bp;
+        List<Point> out = new ArrayList<>();
+        Point prev = null;
+        for (Point p : in) {
+            if (prev == null || !(prev.getX() == p.getX() && prev.getY() == p.getY())) {
+                out.add(p);
+                prev = p;
+            }
+        }
+        return new Blueprint(bp.getAuthor(), bp.getName(), out);
+    }
+}
+```
+
+Recorre la lista de puntos y descarta aquellos que sean iguales al punto inmediatamente anterior (mismo `x` e `y`). Por ejemplo:
+
+| Entrada | Salida |
+|---|---|
+| `(0,0),(0,0),(5,5),(5,5),(3,1)` | `(0,0),(5,5),(3,1)` |
+
+### 5.5 `UndersamplingFilter` — reducción de densidad de puntos
+
+```java
+@Component
+@Profile("undersampling")
+public class UndersamplingFilter implements BlueprintsFilter {
+    @Override
+    public Blueprint apply(Blueprint bp) {
+        List<Point> in = bp.getPoints();
+        if (in.size() <= 2) return bp;
+        List<Point> out = new ArrayList<>();
+        for (int i = 0; i < in.size(); i++) {
+            if (i % 2 == 0) out.add(in.get(i));
+        }
+        return new Blueprint(bp.getAuthor(), bp.getName(), out);
+    }
+}
+```
+
+Conserva únicamente los puntos en posiciones pares (índices 0, 2, 4, …), reduciendo a la mitad la densidad del plano. Si el blueprint tiene 2 puntos o menos, se devuelve sin modificar para no perder información esencial. Por ejemplo:
+
+| Entrada | Salida |
+|---|---|
+| `(0,0),(1,1),(2,2),(3,3),(4,4)` | `(0,0),(2,2),(4,4)` |
+
+### 5.6 Integración con `BlueprintsServices`
+
+El servicio recibe el filtro activo por inyección de constructor. Solo el método `getBlueprint` aplica el filtro, ya que es la consulta de un plano individual donde tiene sentido transformar los puntos antes de entregarlos:
+
+```java
+@Service
+public class BlueprintsServices {
+
+    private final BlueprintPersistence persistence;
+    private final BlueprintsFilter filter;
+
+    public BlueprintsServices(BlueprintPersistence persistence, BlueprintsFilter filter) {
+        this.persistence = persistence;
+        this.filter = filter;
+    }
+
+    public Blueprint getBlueprint(String author, String name) throws BlueprintNotFoundException {
+        return filter.apply(persistence.getBlueprint(author, name));
+    }
+    // ...resto de métodos
+}
+```
+
+Los datos originales en la base de datos **nunca se modifican**; el filtro solo actúa sobre el objeto devuelto en la respuesta HTTP.
+
