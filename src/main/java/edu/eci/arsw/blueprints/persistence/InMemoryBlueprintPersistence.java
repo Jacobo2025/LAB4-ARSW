@@ -26,8 +26,12 @@ public class InMemoryBlueprintPersistence implements BlueprintPersistence {
         blueprints.put(keyOf(bp3), bp3);
     }
 
-    private String keyOf(Blueprint bp) { return bp.getAuthor() + ":" + bp.getName(); }
-    private String keyOf(String author, String name) { return author + ":" + name; }
+    private String keyOf(Blueprint bp) {
+        return bp.getAuthor() + ":" + bp.getName();
+    }
+    private String keyOf(String author, String name) {
+        return author + ":" + name;
+    }
 
     @Override
     public void saveBlueprint(Blueprint bp) throws BlueprintPersistenceException {
