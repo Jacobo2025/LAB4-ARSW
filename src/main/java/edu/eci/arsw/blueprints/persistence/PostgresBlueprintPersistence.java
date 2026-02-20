@@ -10,7 +10,7 @@ import java.util.Set;
 @Repository
 @Primary
 public class PostgresBlueprintPersistence implements BlueprintPersistence{
-    private BlueprintRepository blueprintRepository;
+    private final BlueprintRepository blueprintRepository;
 
     public PostgresBlueprintPersistence(BlueprintRepository blueprintRepository) {
         this.blueprintRepository = blueprintRepository;
