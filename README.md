@@ -401,3 +401,85 @@ return ResponseEntity.ok(apiResponse);
 
 Esto aplica tanto para respuestas exitosas como para errores, donde `data` es `null` y el `code` y `message` reflejan el error correspondiente.
 
+---
+## 4. OpenAPI / Swagger
+
+### 4.1 Dependencia en `pom.xml`
+
+Se agregó la dependencia de `springdoc-openapi` para Spring Boot 3.x:
+
+```xml
+<dependency>
+  <groupId>org.springdoc</groupId>
+  <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+  <version>2.6.0</version>
+</dependency>
+```
+
+Esta librería genera automáticamente la documentación de la API leyendo las anotaciones de Spring MVC y expone una interfaz visual interactiva (Swagger UI) sin configuración adicional.
+
+### 4.2 Configuración de `OpenApiConfig`
+
+Se creó la clase `OpenApiConfig` en el paquete `config` para personalizar los metadatos que aparecen en la cabecera de Swagger UI:
+
+```java
+@Configuration
+public class OpenApiConfig {
+
+    @Bean
+    public OpenAPI api() {
+        return new OpenAPI().info(new Info()
+                .title("ARSW Blueprints API")
+                .version("v1")
+                .description("Blueprints Laboratory (Java 21 / Spring Boot 3.3.x)"));
+    }
+}
+```
+
+### 4.3 Configuración de `application.properties`
+
+Se agregaron las siguientes propiedades para definir las rutas de acceso a la documentación:
+
+```properties
+# Swagger / OpenAPI (springdoc)
+springdoc.api-docs.path=/api-docs
+springdoc.swagger-ui.path=/swagger-ui.html
+springdoc.swagger-ui.enabled=true
+```
+
+- **`springdoc.api-docs.path`**: ruta donde se expone el JSON con la especificación OpenAPI 3.
+- **`springdoc.swagger-ui.path`**: ruta de la interfaz visual interactiva.
+- **`springdoc.swagger-ui.enabled`**: activa/desactiva la UI.
+
+Una vez levantada la aplicación, se puede acceder a:
+
+| Recurso | URL |
+|---|---|
+| Swagger UI | [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) |
+| OpenAPI JSON | [http://localhost:8080/api-docs](http://localhost:8080/api-docs) |
+
+### 4.4 Anotaciones en el controlador
+
+Se enriqueció `BlueprintsAPIController` con anotaciones de documentación para describir cada endpoint:
+
+- **`@Tag`**: agrupa todos los endpoints bajo la etiqueta *Blueprints* en la UI.
+- **`@Operation`**: describe el propósito de cada endpoint (resumen y descripción larga).
+- **`@ApiResponses` / `@ApiResponse`**: documenta los posibles códigos HTTP de retorno y su significado.
+- **`@Parameter`**: describe cada `@PathVariable` con texto legible.
+
+Ejemplo aplicado al endpoint `GET /api/v1/blueprints/{author}`:
+
+```java
+@Operation(summary = "Obtener planos por autor",
+           description = "Retorna todos los blueprints que pertenecen al autor indicado.")
+@ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Blueprints del autor encontrados"),
+    @ApiResponse(responseCode = "404", description = "Autor no encontrado")
+})
+@GetMapping("/{author}")
+public ResponseEntity<ApiResponse<Set<Blueprint>>> byAuthor(
+        @Parameter(description = "Nombre del autor") @PathVariable String author) { ... }
+```
+
+Esta combinación permite que Swagger UI muestre, para cada operación, su descripción, los parámetros esperados y los posibles resultados, facilitando el consumo y la prueba de la API directamente desde el navegador.
+
